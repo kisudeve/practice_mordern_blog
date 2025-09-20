@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router";
 import { Calendar, Tag, ArrowLeft, Edit, Delete, X } from "lucide-react";
 import { useState } from "react";
+// import BlogDetailSkeleton from "../../components/loading/BlogDetailSkeleton";
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -43,6 +44,7 @@ export default function BlogDetail() {
 
   return (
     <div>
+      {/* <BlogDetailSkeleton /> */}
       <div className="mb-8">
         <Link
           to="/blog"

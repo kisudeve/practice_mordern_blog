@@ -1,5 +1,6 @@
 import { Calendar, Tag } from "lucide-react";
 import { Link } from "react-router";
+// import BlogListSkeleton from "../../components/loading/BlogListSkeleton";
 
 export default function BlogList() {
   const posts = [
@@ -60,6 +61,7 @@ export default function BlogList() {
       </div>
 
       <div className="space-y-8">
+        {/* <BlogListSkeleton /> */}
         {posts.map((post) => (
           <article key={post.id} className="group">
             <Link to={`/blog/${post.id}`} className="block">

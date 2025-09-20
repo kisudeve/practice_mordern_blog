@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar, Edit3, Save, X } from "lucide-react";
+// import ProfileSkeleton from "../../components/loading/ProfileSkeleton";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -48,6 +49,7 @@ export default function Profile() {
 
   return (
     <div>
+      {/* <ProfileSkeleton /> */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
       </div>
