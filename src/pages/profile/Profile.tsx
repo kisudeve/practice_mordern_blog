@@ -89,6 +89,9 @@ export default function Profile() {
               >
                 Edit Profile
               </button>
+              <button className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors mt-2.5">
+                Logout
+              </button>
             </div>
           </div>
         </div>
