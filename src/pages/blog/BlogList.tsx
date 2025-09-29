@@ -5,7 +5,7 @@ import type { Database } from "../../types/database";
 import supabase from "../../utils/supabase";
 import BlogListSkeleton from "../../components/loading/BlogListSkeleton";
 // import BlogListSkeleton from "../../components/loading/BlogListSkeleton";
-
+type Post = Database["public"]["Tables"]["posts"]["Row"];
 export default function BlogList() {
   const [posts, setPosts] = useState<
     Database["public"]["Tables"]["posts"]["Row"][]
