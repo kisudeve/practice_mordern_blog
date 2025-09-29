@@ -1,18 +1,53 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Github } from "lucide-react";
+import supabase from "../../utils/supabase";
+import { useEffect } from "react";
+import { useAuthStore } from "../../stores/authStore";
 
 export default function LoginSocial() {
+  const navigate = useNavigate();
+  const { claims } = useAuthStore();
+
   const handleGoogleLogin = () => {
     console.log("Google login");
   };
 
-  const handleGithubLogin = () => {
-    console.log("Github login");
+  const handleGithubLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${import.meta.env.VITE_URL}/login`, // 로그인 후 이동할 경로
+        },
+      });
+      if (error) throw error;
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleKakaoLogin = () => {
     console.log("Kakao login");
   };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (claims?.sub) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select()
+          .eq("id", claims!.sub)
+          .single();
+
+        if (profileData?.bio) {
+          navigate("/");
+        } else {
+          navigate("/profile-setup");
+        }
+      }
+    };
+    fetchUser();
+  }, [claims, navigate]);
 
   return (
     <div className="max-w-md mx-auto">

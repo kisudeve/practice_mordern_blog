@@ -1,21 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { User, Mail, FileText, Save } from "lucide-react";
+import { useAuthStore } from "../../stores/authStore";
+import supabase from "../../utils/supabase";
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
+  const claims = useAuthStore((state) => state.claims);
+  const profile = useAuthStore((state) => state.profile);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    bio: "",
+    name: profile?.display_name || "",
+    email: profile?.email || "",
+    bio: profile?.bio || "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would save the profile data
-    console.log("Profile setup completed:", formData);
-    // Redirect to profile page after setup
-    navigate("/profile");
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ bio: formData.bio })
+        .eq("id", claims!.sub)
+        .select();
+
+      if (error) throw error;
+      // Redirect to profile page after setup
+      navigate("/blog");
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleInputChange = (
@@ -28,6 +42,15 @@ export default function ProfileSetup() {
     }));
   };
 
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: profile?.display_name || "",
+        email: profile?.email || "",
+        bio: profile?.bio || "",
+      });
+    }
+  }, [profile]);
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-8">

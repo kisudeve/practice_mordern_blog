@@ -1,24 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar, Edit3, Save, X } from "lucide-react";
+import supabase from "../../utils/supabase";
+import { Link, useNavigate } from "react-router";
+import { useAuthStore } from "../../stores/authStore";
+import ProfileSkeleton from "../../components/loading/ProfileSkeleton";
+import type { Database } from "../../types/database";
 // import ProfileSkeleton from "../../components/loading/ProfileSkeleton";
-
+type Post = Database["public"]["Tables"]["posts"]["Row"];
 export default function Profile() {
+  const naviagate = useNavigate();
+  const profile = useAuthStore((state) => state?.profile);
+  const isLoading = useAuthStore((state) => state?.isLoading);
+  const setProfile = useAuthStore((state) => state.setProfile);
+  const [posts, setPosts] = useState<(Post | null)[]>([]);
+
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    bio: "Frontend developer with a passion for creating beautiful and functional web experiences. I love writing about React, TypeScript, and modern web technologies.",
-    joinDate: "2023-06-15",
-    postsCount: 12,
-    avatar:
-      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop",
-  });
+  const [editForm, setEditForm] = useState<Partial<Profile> | null>(profile);
 
-  const [editForm, setEditForm] = useState(profile);
-
-  const handleSave = () => {
-    setProfile(editForm);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({ ...editForm })
+        .eq("id", profile?.id || "")
+        .select()
+        .single();
+      if (error) throw error;
+      console.log(data);
+      setProfile(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   const handleCancel = () => {
@@ -26,30 +40,31 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const recentPosts = [
-    {
-      id: 1,
-      title: "Building Modern React Applications",
-      date: "2024-01-15",
-      status: "Published",
-    },
-    {
-      id: 2,
-      title: "The Art of Minimalist Design",
-      date: "2024-01-12",
-      status: "Published",
-    },
-    {
-      id: 3,
-      title: "Typography in Web Design",
-      date: "2024-01-10",
-      status: "Published",
-    },
-  ];
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    naviagate("/");
+  };
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const { data: posts, error } = await supabase
+          .from("posts")
+          .select(` *`)
+          .eq("profile_id", profile?.id || "")
+          .order("created_at", { ascending: false }); // 최신 글이 맨 위
+
+        if (error) throw error;
+        setPosts(posts);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchPosts();
+  }, [profile?.id]);
+  if (isLoading) return <ProfileSkeleton />;
 
   return (
     <div>
-      {/* <ProfileSkeleton /> */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
       </div>
@@ -59,26 +74,27 @@ export default function Profile() {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="text-center mb-6">
               <img
-                src={profile.avatar}
+                src={profile?.avatar_url || ""}
                 alt="Profile"
                 className="w-24 h-24 rounded-full mx-auto mb-4"
               />
               <h2 className="text-xl font-bold text-gray-900">
-                {profile.name}
+                {profile?.display_name}
               </h2>
-              <p className="text-gray-600">{profile.email}</p>
+              <p className="text-gray-600">{profile?.email}</p>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center text-gray-600">
                 <Calendar size={16} className="mr-3" />
                 <span>
-                  Joined {new Date(profile.joinDate).toLocaleDateString()}
+                  Joined{" "}
+                  {new Date(profile?.created_at || "").toLocaleDateString()}
                 </span>
               </div>
               <div className="flex items-center text-gray-600">
                 <Edit3 size={16} className="mr-3" />
-                <span>{profile.postsCount} posts published</span>
+                <span>0 posts published</span>
               </div>
             </div>
 
@@ -89,7 +105,10 @@ export default function Profile() {
               >
                 Edit Profile
               </button>
-              <button className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors mt-2.5">
+              <button
+                className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors mt-2.5"
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </div>
@@ -128,9 +147,9 @@ export default function Profile() {
                   </label>
                   <input
                     type="text"
-                    value={editForm.name}
+                    value={editForm?.display_name || ""}
                     onChange={(e) =>
-                      setEditForm({ ...editForm, name: e.target.value })
+                      setEditForm({ ...editForm, display_name: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                   />
@@ -141,7 +160,7 @@ export default function Profile() {
                   </label>
                   <input
                     type="email"
-                    value={editForm.email}
+                    value={editForm?.email || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm, email: e.target.value })
                     }
@@ -153,7 +172,7 @@ export default function Profile() {
                     Bio
                   </label>
                   <textarea
-                    value={editForm.bio}
+                    value={editForm?.bio || ""}
                     onChange={(e) =>
                       setEditForm({ ...editForm, bio: e.target.value })
                     }
@@ -163,7 +182,7 @@ export default function Profile() {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+              <p className="text-gray-700 leading-relaxed">{profile?.bio}</p>
             )}
           </div>
 
@@ -172,27 +191,25 @@ export default function Profile() {
               Recent Posts
             </h3>
             <div className="space-y-4">
-              {recentPosts.map((post) => (
-                <div
-                  key={post.id}
+              {posts.map((post) => (
+                <Link
+                  key={post?.id}
+                  to={`/blog/${post?.id}`}
                   className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
                 >
                   <div>
-                    <h4 className="font-medium text-gray-900">{post.title}</h4>
+                    <h4 className="font-medium text-gray-900">{post?.title}</h4>
                     <p className="text-sm text-gray-600">
-                      {new Date(post.date).toLocaleDateString()}
+                      {new Date(post?.created_at || "").toLocaleDateString()}
                     </p>
                   </div>
+                  {/* 추천 디자인 bg-yellow-100 text-yellow-800 */}
                   <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      post.status === "Published"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
+                    className={`px-2 py-1 text-xs rounded-full bg-green-100 text-green-800`}
                   >
-                    {post.status}
+                    Published
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

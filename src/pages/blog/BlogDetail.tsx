@@ -1,50 +1,87 @@
-import { useParams, Link } from "react-router";
-import { Calendar, Tag, ArrowLeft, Edit, Delete, X } from "lucide-react";
-import { useState } from "react";
-// import BlogDetailSkeleton from "../../components/loading/BlogDetailSkeleton";
+import { useParams, Link, useNavigate } from "react-router";
+import {
+  Calendar,
+  Tag,
+  ArrowLeft,
+  Share2,
+  Edit,
+  Delete,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import supabase from "../../utils/supabase";
+import type { Database } from "../../types/database";
+import { formatJoined } from "../../utils/date";
+import BlogDetailSkeleton from "../../components/loading/BlogDetailSkeleton";
+
+type Post = Database["public"]["Tables"]["posts"]["Row"];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type PostWithProfile = Post & {
+  profile: Profile | null;
+};
 
 export default function BlogDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [post, setPost] = useState<PostWithProfile | null>(null);
+  const [postCount, setPostCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Mock post data - in real app, this would come from API
-  const post = {
-    id: parseInt(id || "1"),
-    title: "Building Modern React Applications",
-    content: `
-      <p>React has revolutionized the way we build user interfaces, and with the constant evolution of the ecosystem, staying up-to-date with best practices is crucial for building scalable and maintainable applications.</p>
-      
-      <h2>Getting Started with Modern React</h2>
-      <p>Modern React development involves several key concepts and tools that have become standard in the industry. From hooks to context, from TypeScript integration to state management patterns, there's a lot to consider when architecting a new React application.</p>
-      
-      <h2>Key Principles</h2>
-      <p>When building React applications, it's important to follow certain principles that will make your code more maintainable and your applications more performant. These include component composition, proper state management, and thinking in React.</p>
-      
-      <h2>Best Practices</h2>
-      <p>Some of the most important best practices include using TypeScript for better developer experience, implementing proper error boundaries, optimizing performance with React.memo and useMemo, and following consistent naming conventions.</p>
-      
-      <p>By following these guidelines and staying current with React's evolution, you'll be well-equipped to build robust applications that can scale with your needs.</p>
-    `,
-    date: "2024-01-15",
-    category: "Development",
-    author: "John Doe",
-    readTime: "5 min read",
-    image:
-      "https://images.pexels.com/photos/11035380/pexels-photo-11035380.jpeg?auto=compress&cs=tinysrgb&w=800&h=400&fit=crop",
-    color: "from-blue-500 to-purple-600",
+  const handleDelete = async () => {
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", Number(post?.id));
+      if (error) throw error;
+    } catch (e) {
+      console.error(e);
+    } finally {
+      navigate("/blog");
+      // setShowDeleteModal(false);
+    }
   };
 
-  const handleDelete = () => {
-    // Handle post deletion logic here
-    console.log("Deleting post:", post?.id);
-    setShowDeleteModal(false);
-    // In real app, redirect to blog list after deletion
-    // navigate('/blog');
-  };
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      try {
+        // 특정 게시글 정보 먼저 가져오기
+        const { data: post, error } = await supabase
+          .from("posts")
+          .select(
+            ` *,
+      profile:profiles ( id, display_name, avatar_url, bio, email, created_at )`
+          )
+          .eq("id", Number(id))
+          .single();
 
+        if (error) throw error;
+        setPost(post);
+
+        // 같은 작성자의 글 갯수 카운트
+        const { count, error: countError } = await supabase
+          .from("posts")
+          .select("*", { count: "exact", head: true }) // head:true => 실제 데이터는 안 가져오고 count만
+          .eq("profile_id", post?.profile?.id || "");
+        if (countError) throw countError;
+
+        setPostCount(count!);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
+      }
+    };
+    fetchPosts();
+  }, [id]);
+
+  if (isLoading) return <BlogDetailSkeleton />;
   return (
     <div>
-      {/* <BlogDetailSkeleton /> */}
       <div className="mb-8">
         <Link
           to="/blog"
@@ -59,11 +96,11 @@ export default function BlogDetail() {
         <header className="mb-8">
           <div className="relative overflow-hidden rounded-lg mb-6">
             <div
-              className={`absolute inset-0 bg-gradient-to-br ${post.color} opacity-90`}
+              className={`absolute inset-0 bg-gradient-to-br  opacity-90`}
             ></div>
             <img
-              src={post.image}
-              alt={post.title}
+              src={post?.thumbnail || undefined}
+              alt={post?.thumbnail || undefined}
               className="w-full h-64 md:h-80 object-cover"
             />
             <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -72,28 +109,29 @@ export default function BlogDetail() {
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
             <div className="flex items-center">
               <Calendar size={14} className="mr-1" />
-              {new Date(post.date).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}
+              {post?.created_at &&
+                new Date(post.created_at).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
             </div>
             <div className="flex items-center">
               <Tag size={14} className="mr-1" />
-              {post.category}
+              {post?.category}
             </div>
-            <span>{post.readTime}</span>
-            <span>by {post.author}</span>
+            <span>0</span>
+            <span>by {post?.profile?.display_name}</span>
           </div>
 
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            {post.title}
+            {post?.title}
           </h1>
 
           <div className="flex items-center justify-between border-b border-gray-200 pb-6">
             <div className="flex items-center space-x-4">
               <Link
-                to={`/edit/${post.id}`}
+                to={`/blog/edit/${post?.id}`}
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
               >
                 <Edit size={16} className="mr-2" />
@@ -107,35 +145,41 @@ export default function BlogDetail() {
                 Delete
               </button>
             </div>
+            <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+              <Share2 size={16} className="mr-2" />
+              Share
+            </button>
           </div>
         </header>
 
         <div
           className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: post?.content as string }}
         />
 
         <footer className="mt-12 pt-8 border-t border-gray-200">
           <div className="bg-gray-50 rounded-lg p-6">
             <div className="flex items-start space-x-4">
               <img
-                src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop"
-                alt={post.author}
+                src={post?.profile?.avatar_url || undefined}
+                alt={post?.profile?.display_name || undefined}
                 className="w-16 h-16 rounded-full object-cover"
               />
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  About the Author
+                  {post?.profile?.display_name}
                 </h3>
                 <p className="text-gray-600 mb-2">
-                  <strong>{post.author}</strong> is a frontend developer with
-                  over 8 years of experience building web applications. He
-                  specializes in React, TypeScript, and modern web technologies.
+                  <strong>{post?.profile?.display_name}</strong> is a frontend
+                  {post?.profile?.bio}
                 </p>
                 <div className="flex space-x-4 text-sm text-gray-500">
-                  <span>15 articles published</span>
+                  <span>{postCount} articles published</span>
                   <span>•</span>
-                  <span>Joined March 2023</span>
+                  <span>
+                    {" "}
+                    {post?.created_at ? formatJoined(post.created_at) : null}
+                  </span>
                 </div>
               </div>
             </div>
