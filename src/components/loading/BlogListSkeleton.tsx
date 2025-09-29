@@ -2,30 +2,33 @@ export default function BlogListSkeleton() {
   return (
     <div className="space-y-8">
       {[...Array(4)].map((_, index) => (
-        <div
-          key={index}
-          className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
-        >
-          <div className="md:flex">
-            <div className="md:w-1/3 relative">
-              <div className="w-full h-48 md:h-full bg-gray-200"></div>
-            </div>
-            <div className="md:w-2/3 p-6 md:p-8">
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="h-3 bg-gray-200 rounded w-20"></div>
-                <div className="h-3 bg-gray-200 rounded w-16"></div>
+        <div key={index} className="bg-white space-y-8">
+          <article className="group">
+            <a className="block" href="#" aria-label="Loading blog post">
+              <div className="bg-gray-200 rounded-lg overflow-hidden">
+                <div className="md:flex">
+                  <div className="md:w-1/3 relative overflow-hidden h-52">
+                    <div className="absolute inset-0 bg-gray-300 animate-pulse"></div>
+                  </div>
+                  <div className="bg-white md:w-2/3 p-6 md:p-8">
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                      <div className="flex items-center mt-1">
+                        <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse mr-1"></div>
+                        <div className="w-16 h-4 bg-gray-300 rounded animate-pulse"></div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse mr-1"></div>
+                        <div className="w-24 h-4 bg-gray-300 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                    <h2 className="w-3/4 h-6 bg-gray-300 rounded animate-pulse mt-5 mb-5"></h2>
+                    <p className="w-full h-5 bg-gray-300 rounded animate-pulse mb-3"></p>
+                    <p className="w-full h-5 bg-gray-300 rounded animate-pulse mb-3"></p>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3 mb-4">
-                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </div>
-          </div>
+            </a>
+          </article>
         </div>
       ))}
     </div>
