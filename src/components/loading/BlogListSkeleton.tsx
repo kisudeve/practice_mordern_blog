@@ -22,8 +22,8 @@ export default function BlogListSkeleton() {
                       </div>
                     </div>
                     <h2 className="w-3/4 h-6 bg-gray-300 rounded animate-pulse mt-5 mb-5"></h2>
-                    <p className="w-full h-5 bg-gray-300 rounded animate-pulse mb-3"></p>
-                    <p className="w-full h-5 bg-gray-300 rounded animate-pulse mb-3"></p>
+                    <p className="w-full h-4.5 bg-gray-300 rounded animate-pulse mb-3"></p>
+                    <p className="w-full h-4.5 bg-gray-300 rounded animate-pulse mb-3"></p>
                   </div>
                 </div>
               </div>
